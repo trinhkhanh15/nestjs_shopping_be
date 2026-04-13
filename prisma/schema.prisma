@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  name String
+  passwordHash String @default("")
+  balanceCents Int @default(0)
+  products Product[]
+  buy_txn Transaction[] @relation("BuyRelation")
+  sell_txn Transaction[] @relation("SellRelation")
+}
+
+model Product {
+  id String @id @default(uuid())
+  name String
+  amount Int
+  priceCents Int
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorID], references: [id])
+  authorID String
+
+  txns Transaction[]
+}
+
+model Transaction {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now())
+  
+  from_author User @relation("BuyRelation", fields: [from_user], references: [id])
+  from_user String
+
+  to_author User @relation("SellRelation", fields: [to_user], references: [id])
+  to_user String
+
+  moneyAmountCents Int
+
+  link_product Product @relation(fields: [product_id], references: [id])
+  product_id String
+}
