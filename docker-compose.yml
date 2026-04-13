@@ -15,9 +15,30 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis_stack_test
+    restart: always
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    environment:
+      REDIS_PASSWORD: redis_pass_123
+    volumes:
+      - redis_data:/data
+    command: redis-server --requirepass redis_pass_123 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_pass_123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  redis_data:

@@ -1,25 +1,49 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
+  private readonly PRODUCTS_CACHE_KEY = 'products:list';
+  private readonly PRODUCTS_CACHE_TTL = 600000; // 10 minutes
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async list() {
     this.logger.log('Fetching all products');
     try {
+      // Try to get from cache
+      const cachedProducts = await this.cacheManager.get(this.PRODUCTS_CACHE_KEY);
+      if (cachedProducts) {
+        this.logger.debug('Products retrieved from cache');
+        return cachedProducts;
+      }
+
+      // Cache miss - fetch from database
+      this.logger.debug('Cache miss - fetching products from database');
       const products = await this.prisma.product.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
           author: { select: { id: true, email: true, name: true } },
         },
       });
-      this.logger.debug(`Retrieved ${products.length} products`);
+
+      // Store in cache
+      await this.cacheManager.set(
+        this.PRODUCTS_CACHE_KEY,
+        products,
+        this.PRODUCTS_CACHE_TTL,
+      );
+      this.logger.debug(`Retrieved ${products.length} products and cached`);
       return products;
     } catch (error) {
-      this.logger.error(`Error fetching products: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error fetching products: ${errorMessage}`);
       throw error;
     }
   }
@@ -39,7 +63,8 @@ export class ProductsService {
       return product;
     } catch (error) {
       if (!(error instanceof NotFoundException)) {
-        this.logger.error(`Error fetching product ${id}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Error fetching product ${id}: ${errorMessage}`);
       }
       throw error;
     }
@@ -57,9 +82,14 @@ export class ProductsService {
         },
       });
       this.logger.log(`Product created successfully: ${product.id}`);
+
+      // Invalidate products list cache
+      await this.invalidateProductsCache();
+
       return product;
     } catch (error) {
-      this.logger.error(`Error creating product for user ${userId}: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error creating product for user ${userId}: ${errorMessage}`);
       throw error;
     }
   }
@@ -82,10 +112,15 @@ export class ProductsService {
         data,
       });
       this.logger.log(`Product updated successfully: ${productId}`);
+
+      // Invalidate products list cache
+      await this.invalidateProductsCache();
+
       return updatedProduct;
     } catch (error) {
       if (!(error instanceof NotFoundException || error instanceof ForbiddenException)) {
-        this.logger.error(`Error updating product ${productId}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Error updating product ${productId}: ${errorMessage}`);
       }
       throw error;
     }
@@ -106,12 +141,30 @@ export class ProductsService {
 
       await this.prisma.product.delete({ where: { id: productId } });
       this.logger.log(`Product deleted successfully: ${productId}`);
+
+      // Invalidate products list cache
+      await this.invalidateProductsCache();
+
       return { ok: true };
     } catch (error) {
       if (!(error instanceof NotFoundException || error instanceof ForbiddenException)) {
-        this.logger.error(`Error deleting product ${productId}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Error deleting product ${productId}: ${errorMessage}`);
       }
       throw error;
+    }
+  }
+
+  /**
+   * Helper method to invalidate the products list cache
+   */
+  private async invalidateProductsCache(): Promise<void> {
+    try {
+      await this.cacheManager.del(this.PRODUCTS_CACHE_KEY);
+      this.logger.debug('Products cache invalidated');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error invalidating products cache: ${errorMessage}`);
     }
   }
 }
