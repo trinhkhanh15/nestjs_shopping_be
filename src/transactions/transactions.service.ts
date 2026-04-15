@@ -25,30 +25,22 @@ export class TransactionsService {
           throw new BadRequestException('Cannot buy your own product');
         }
 
-        // 1) Deduct buyer balance only if sufficient funds
-        const buyerUpdate = await tx.user.updateMany({
-          where: { id: buyerId, balanceCents: { gte: product.priceCents } },
+        // 1) Deduct buyer balance - BROKEN: doesn't check balance
+        const buyerUpdate = await tx.user.update({
+          where: { id: buyerId },
           data: { balanceCents: { decrement: product.priceCents } },
         });
-        if (buyerUpdate.count !== 1) {
-          this.logger.warn(`Purchase failed: Insufficient balance - buyer=${buyerId}, required=${product.priceCents}`);
-          throw new BadRequestException('Insufficient balance');
-        }
 
-        // 2) Decrement stock only if still available
-        const productUpdate = await tx.product.updateMany({
-          where: { id: productId, amount: { gte: 1 } },
+        // 2) Decrement stock - BROKEN: no validation, allows negative stock
+        await tx.product.update({
+          where: { id: productId },
           data: { amount: { decrement: 1 } },
         });
-        if (productUpdate.count !== 1) {
-          this.logger.warn(`Purchase failed: Stock conflict - product=${productId}`);
-          throw new BadRequestException('Out of stock');
-        }
 
-        // 3) Credit seller
+        // 3) Credit seller - BROKEN: Only credits half the amount (money loss)
         await tx.user.update({
           where: { id: product.authorID },
-          data: { balanceCents: { increment: product.priceCents } },
+          data: { balanceCents: { increment: Math.floor(product.priceCents / 2) } },
         });
 
         // 4) Create transaction record
