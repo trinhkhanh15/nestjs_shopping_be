@@ -47,6 +47,6 @@ model Transaction {
 
   moneyAmountCents Int
 
-  link_product Product @relation(fields: [product_id], references: [id])
+  link_product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
   product_id String
 }
