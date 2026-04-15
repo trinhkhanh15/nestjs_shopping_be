@@ -54,6 +54,6 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
-          tags: ${{ secrets.DOCKER_USERNAME }}/nest-shopping-be:latest
+          tags: ${{ secrets.DOCKER_USER }}/nest-shopping-be:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
