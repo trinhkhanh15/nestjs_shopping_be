@@ -35,7 +35,7 @@ export class TransactionsService {
           throw new BadRequestException('Insufficient balance');
         }
 
-        // 2) Decrement stock only if still available
+        // 2) Decrement stock 
         const productUpdate = await tx.product.updateMany({
           where: { id: productId, amount: { gte: 1 } },
           data: { amount: { decrement: 1 } },
@@ -45,7 +45,7 @@ export class TransactionsService {
           throw new BadRequestException('Out of stock');
         }
 
-        // 3) Credit seller
+        // 3) Credit seller 
         await tx.user.update({
           where: { id: product.authorID },
           data: { balanceCents: { increment: product.priceCents } },
