@@ -7,9 +7,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,17 +23,50 @@ services:
       - "6379:6379"
       - "8001:8001"
     environment:
-      REDIS_PASSWORD: redis_pass_123
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
-    command: redis-server --requirepass redis_pass_123 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redis_pass_123", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build: .
+    image: ${DOCKER_USER}/nest-shopping-be:latest
+    container_name: nest-shopping-be
+    restart: always
+    pull_policy: always
+    ports:
+      - "3002:3002"  # Map your NestJS port
+    environment:
+      # --- Database (pointing to the 'db' service name) ---
+      - DATABASE_URL={DATABASE_URL}?schema=public
+      - PORT=${PORT}
+
+      # --- JWT ---
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_ACCESS_TTL=${JWT_ACCESS_TTL}
+
+      # --- Redis (pointing to the 'redis' service name) ---
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      # --- Frontend ---
+      # - FRONTEND_URL=${FRONTEND_URL}
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
 
 networks:
   app-network:
