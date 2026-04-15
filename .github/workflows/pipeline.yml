@@ -3,7 +3,7 @@ name: CI/CD pipeline
 on:
   push:
     branches: [main]
-  pull-request:
+  pull_request: # FIXED: Was 'pull-request' (must be underscore)
     branches: [main]
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20" # FIXED: Use quotes for version numbers to avoid YAML parsing issues
           cache: "npm"
 
       - name: Install dependencies
