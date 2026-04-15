@@ -26,7 +26,7 @@ export class WalletService {
             from_user: ADMIN_ID,
             to_user: userId,
             moneyAmountCents: amountCents,
-            product_id: null,
+            product_id: '00000000-0000-0000-0000-000000000000', // Null UUID for system deposits
           },
         });
 

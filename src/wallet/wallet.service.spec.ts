@@ -18,7 +18,7 @@ describe('WalletService - Unit Tests', () => {
     from_user: 'admin',
     to_user: 'user-1',
     moneyAmountCents: 5000,
-    product_id: null,
+    product_id: '00000000-0000-0000-0000-000000000000',
     createdAt: new Date(),
   };
 
@@ -121,7 +121,7 @@ describe('WalletService - Unit Tests', () => {
       );
     });
 
-    it('should create transaction with product_id as null for deposits', async () => {
+    it('should create transaction with system deposit product_id', async () => {
       const mockTx = {
         user: {
           update: jest.fn().mockResolvedValue(mockUser),
@@ -142,7 +142,7 @@ describe('WalletService - Unit Tests', () => {
           from_user: 'admin',
           to_user: 'user-1',
           moneyAmountCents: 5000,
-          product_id: null,
+          product_id: '00000000-0000-0000-0000-000000000000',
         },
       });
     });

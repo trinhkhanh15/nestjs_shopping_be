@@ -68,7 +68,7 @@ describe('Wallet & Transactions - Integration Tests (E2E)', () => {
       expect(response.body.transaction.from_user).toBe('admin');
       expect(response.body.transaction.to_user).toBe(buyerId);
       expect(response.body.transaction.moneyAmountCents).toBe(depositAmount);
-      expect(response.body.transaction.product_id).toBeNull();
+      expect(response.body.transaction.product_id).toBe('00000000-0000-0000-0000-000000000000');
     });
 
     it('should create audit trail with multiple deposits', async () => {
@@ -290,18 +290,18 @@ describe('Wallet & Transactions - Integration Tests (E2E)', () => {
       );
     });
 
-    it('should verify all transactions have admin as source for deposits', async () => {
+    it('should verify all transactions have admin as source and system deposit product for deposits', async () => {
       const allDepositTransactions = await prisma.transaction.findMany({
         where: {
           from_user: 'admin',
-          product_id: null,
+          product_id: '00000000-0000-0000-0000-000000000000',
         },
       });
 
       expect(allDepositTransactions.length).toBeGreaterThan(0);
       allDepositTransactions.forEach((txn) => {
         expect(txn.from_user).toBe('admin');
-        expect(txn.product_id).toBeNull();
+        expect(txn.product_id).toBe('00000000-0000-0000-0000-000000000000');
       });
     });
   });
