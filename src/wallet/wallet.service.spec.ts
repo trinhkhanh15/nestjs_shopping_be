@@ -37,6 +37,10 @@ describe('WalletService - Unit Tests', () => {
 
     service = module.get<WalletService>(WalletService);
     prismaService = module.get<PrismaService>(PrismaService);
+
+    // Mock the logger to suppress test output
+    jest.spyOn(service['logger'], 'log').mockImplementation(() => {});
+    jest.spyOn(service['logger'], 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -74,7 +78,7 @@ describe('WalletService - Unit Tests', () => {
           from_user: 'admin',
           to_user: 'user-1',
           moneyAmountCents: 5000,
-          product_id: null,
+          product_id: '00000000-0000-0000-0000-000000000000',
         },
       });
     });
