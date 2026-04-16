@@ -86,10 +86,9 @@ jobs:
           echo "=== Verify key ==="
           ssh-keygen -y -f ~/.ssh/deploy.pem
 
-
       - name: SSH & Deploy
         run: |
           ssh -i ~/.ssh/deploy.pem \
               -o StrictHostKeyChecking=no \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-              "docker pull ${{ secrets.DOCKER_USER }}/${{ secrets.IMAGE_NAME }}:latest && docker compose -f ~/app/docker-compose.yml up -d"
+              "docker pull ${{ secrets.DOCKER_USER }}/${{ secrets.IMAGE_NAME }}:latest && cd ~/app && docker compose up -d"
