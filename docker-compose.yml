@@ -37,8 +37,8 @@ services:
 
   backend:
     build: .
-    image: ${DOCKER_USER}/nest-shopping-be:latest
-    container_name: nest-shopping-be
+    image: ${DOCKER_USER}/${IMAGE_NAME}:latest
+    container_name: ${IMAGE_NAME}
     restart: always
     pull_policy: always
     ports:
