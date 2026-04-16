@@ -69,11 +69,11 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy.pem
-          sed -i 's/-----BEGIN/\n-----BEGIN/' ~/.ssh/deploy.pem
-          sed -i 's/-----END/\n-----END/' ~/.ssh/deploy.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 -d > ~/.ssh/deploy.pem
           chmod 600 ~/.ssh/deploy.pem
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verify key (debug)
+        run: ssh-keygen -y -f ~/.ssh/deploy.pem
 
       - name: SSH & Deploy
         run: |
@@ -82,6 +82,4 @@ jobs:
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
           "docker pull ${{ secrets.DOCKER_USER }}/${{ secrets.IMAGE_NAME }}:latest && docker compose -f ~/app/docker-compose.yml up -d"
 
-      - name: Verify key
-        run: ssh-keygen -y -f ~/.ssh/deploy.pem
 
