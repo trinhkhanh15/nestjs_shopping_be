@@ -73,8 +73,19 @@ jobs:
           chmod 600 ~/.ssh/deploy.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Verify key (debug)
-        run: ssh-keygen -y -f ~/.ssh/deploy.pem
+      - name: Debug key format
+        run: |
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy.pem
+          chmod 600 ~/.ssh/deploy.pem
+          echo "=== First line ==="
+          head -1 ~/.ssh/deploy.pem
+          echo "=== Last line ==="
+          tail -1 ~/.ssh/deploy.pem
+          echo "=== Total lines ==="
+          wc -l ~/.ssh/deploy.pem
+          echo "=== Verify key ==="
+          ssh-keygen -y -f ~/.ssh/deploy.pem
+
 
       - name: SSH & Deploy
         run: |
