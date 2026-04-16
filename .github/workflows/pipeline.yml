@@ -68,7 +68,7 @@ jobs:
 
       - name: Setup SSH key
         run: |
-          mmkdir -p ~/.ssh
+          mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy.pem
           chmod 600 ~/.ssh/deploy.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
